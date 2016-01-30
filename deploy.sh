@@ -5,8 +5,8 @@ workdir=`pwd`
 miss=()
 printf "Preinstall Start.\n"
 printf "Now check the prerequisites.\n"
-printf "Check python3.\n"
-command -v python3 || miss[${#miss[@]}]="python3"
+printf "Check python2.6/2.7.\n"
+command -v python2.7 || command -v python2.6 ||  miss[${#miss[@]}]="python2.7"
 printf "Check pip.\n"
 command -v pip || miss[${#miss[@]}]="pip"
 printf "Check virtualenv.\n"
@@ -20,7 +20,7 @@ if [ ${#miss[@]} -ne 0 ];then
   fi
 fi
 command -v deactivate && deactivate
-[ -f ansiblevirenv/bin/activate ] || virtualenv -p python3 ansiblevirenv
+[ -f ansiblevirenv/bin/activate ] || virtualenv -p python2 ansiblevirenv
 . ansiblevirenv/bin/activate
 if [ ${VIRTUAL_ENV}"z" != ${workdir}"/ansiblevirenvz" ];then
   printf "Activate the virtualenv failed, Check error log, then rerun this script.\n"
