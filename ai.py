@@ -1,18 +1,30 @@
 #!/usr/bin/env python
-#coding=utf-8
-import MySQLdb, sys, json
+# coding=utf-8
+import MySQLdb
+import sys
+import json
 
+
+# Mysqldb variables.
 host = 'localhost'
 user = 'djangodev'
 password = 'djangodev'
 dbname = 'djangodev'
 charset = 'utf8'
 
+# Defined the sqls would be used.
+allhostsql = 'select ansible_alias from inventory_host'
+findhostvarsql = 'select a.var_name,a.var_value from inventory_hostvar a where a.host_id = (select id from inventory_host b where b.ansible_alias = %s)'
+
 
 def findHost(alias):
+    '''
+    When script is invoked with '--host <hostname>',
+    return the host's variable json or Null.
+    '''
     dbconn = MySQLdb.Connect(host=host, user=user, passwd=password, db=dbname, charset=charset)
     cursor = dbconn.cursor()
-    cursor.execute('select a.var_name,a.var_value from inventory_var a where a.host_id = (select id from inventory_host b where b.ansible_alias = \''+alias+'\')')
+    cursor.execute(findhostvarsql, [alias])
     data = cursor.fetchall()
     data = dict(data)
     dbconn.close()
@@ -20,18 +32,27 @@ def findHost(alias):
 
 
 def findAll():
+    '''
+    When script is invoked with '--list',
+    return all groups, hosts, variables json.
+    '''
     dbconn = MySQLdb.Connect(host=host, user=user, passwd=password, db=dbname, charset=charset)
     cursor = dbconn.cursor()
-    sql = 'select ansible_alias from inventory_host'
-    cursor.execute(sql)
+    cursor.execute(allhostsql)
     hostdata = cursor.fetchall()
     hostdata = [x[0] for x in hostdata]
     resultdata = {}
+    allhostvardata = {}
+    allhostdata = {'hosts': hostdata}
+    # the 'all' element.
+    resultdata['all'] = allhostdata
     for alias in hostdata:
-        cursor.execute('select a.var_name,a.var_value from inventory_var a where a.host_id = (select id from inventory_host b where b.ansible_alias = \''+alias+'\')')
+        cursor.execute(findhostvarsql, [alias])
         data = cursor.fetchall()
         data = dict(data)
-        resultdata[alias+'group'] = {'hosts':[alias],'vars':data}
+        allhostvardata[alias] = data
+    # for ansible 1.3 or higher, add the top element '_meta' for all hostvars.
+    resultdata['_meta'] = {'hostvars': allhostvardata}
     dbconn.close()
     print json.dumps(resultdata, sort_keys=True, indent=2)
 
