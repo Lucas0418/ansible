@@ -1,0 +1,6 @@
+---
+- hosts: all
+  remote_user: root
+  tasks:
+    - name: add the local key to remote managed machines's authorized_keys
+      authorized_key: user=root key="{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
